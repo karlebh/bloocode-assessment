@@ -15,13 +15,20 @@ class Episode extends Model
         'user_id',
         'podcast_id',
         'title',
+        'description',
         'slug',
         'audio_url',
         'duration',
         'episode_number',
         'summary',
         'release_date',
+        'listen_count',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
 
     public function user(): BelongsTo
     {

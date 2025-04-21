@@ -22,9 +22,7 @@ class PodcastFactory extends Factory
             'image_url' => $this->faker->imageUrl(640, 480, 'podcast', true),
             'author_name' => $this->faker->name,
             'language' => $this->faker->randomElement(['en', 'es', 'fr', 'pt']),
-            'status' => $this->faker->randomElement(['published', 'draft', 'archived']),
             'episode_count' => $this->faker->numberBetween(0, 100),
-            'published_at' => $this->faker->optional()->dateTimeThisYear(),
         ];
     }
 }

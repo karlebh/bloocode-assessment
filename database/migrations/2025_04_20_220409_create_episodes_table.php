@@ -18,12 +18,14 @@ return new class extends Migration
             $table->foreignIdFor(User::class);
             $table->foreignIdFor(Podcast::class);
             $table->string('title');
+            $table->longText('description');
             $table->string('slug')->unique();
             $table->string('audio_url');
             $table->time('duration')->nullable();
             $table->integer('episode_number')->nullable();
             $table->text('summary')->nullable();
             $table->date('release_date')->nullable();
+            $table->integer('listen_count')->default(0);
             $table->timestamps();
 
             $table->index(['title', 'slug']);

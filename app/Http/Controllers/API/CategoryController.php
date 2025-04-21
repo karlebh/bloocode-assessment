@@ -7,6 +7,7 @@ use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class CategoryController extends Controller
@@ -16,19 +17,26 @@ class CategoryController extends Controller
         try {
             $requestData = $request->validate(['q' => 'string']);
 
-            $categories = Category::query();
+            $cacheKey = 'categories:' . md5($request->fullUrl());
 
-            if ($request->filled('q')) {
-                $categories
-                    ->where('name', 'like', '%' . $requestData['q'] . '%')
-                    ->orWhere('slug', 'like', '%' . $requestData['q'] . '%');
-            }
+            $result = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($requestData, $request) {
+                $query = Category::query();
 
-            $paginated = $categories->latest()->paginate(10);
+                if (! $requestData['q']) {
+                    $query->where(function ($q) use ($requestData) {
+                        $q->where('name', 'like', '%' . $requestData['q'] . '%')
+                            ->orWhere('slug', 'like', '%' . $requestData['q'] . '%');
+                    });
+                }
 
-            $groupedCategories = $paginated->getCollection()->groupBy('name');
+                $paginated = $query->latest()->paginate(10);
 
-            return $this->successResponse('All Categories', ['categories' => $groupedCategories]);
+                return [
+                    'categories' => $paginated->getCollection()->groupBy('name'),
+                ];
+            });
+
+            return $this->successResponse('All Categories', ['categories' => $result]);
         } catch (\Throwable $th) {
             return $this->serverErrorResponse('Server error', $th);
         }

@@ -7,6 +7,8 @@ use App\Http\Requests\StorePodcastRequest;
 use App\Http\Requests\UpdatePodcastRequest;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class PodcastController extends Controller
@@ -16,19 +18,27 @@ class PodcastController extends Controller
         try {
             $requestData = $request->validate(['q' => 'string']);
 
-            $podcasts = Podcast::query()->with('episodes');
+            $cacheKey = 'podcasts:' . md5($request->fullUrl());
 
-            if ($request->filled('q')) {
-                $podcasts
-                    ->where('name', 'like', '%' . $requestData['q'] . '%')
-                    ->orWhere('slug', 'like', '%' . $requestData['q'] . '%');
-            }
+            $result = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($requestData) {
+                $query = Podcast::query()->with('episodes');
 
-            $paginated = $podcasts->latest()->paginate(30);
+                if (! $requestData['q']) {
+                    $query->where(function ($q) use ($requestData) {
+                        $q->where('name', 'like', '%' . $requestData['q'] . '%')
+                            ->orWhere('slug', 'like', '%' . $requestData['q'] . '%');
+                    });
+                }
 
-            $groupedPodcasts = $paginated->getCollection()->groupBy('name');
+                $paginated = $query->latest()->paginate(30);
+                $grouped = $paginated->getCollection()->groupBy('name');
 
-            return $this->successResponse('All Podcasts', ['podcasts' => $groupedPodcasts]);
+                return [
+                    'podcasts' => $grouped,
+                ];
+            });
+
+            return $this->successResponse('All Podcasts', ['podcasts' => $result]);
         } catch (\Throwable $th) {
             return $this->serverErrorResponse('Server error', $th);
         }
@@ -37,9 +47,18 @@ class PodcastController extends Controller
     public function store(StorePodcastRequest $request)
     {
         try {
-            $podcast = Podcast::create($request->validated() + [
+            $requestData = $request->validated();
+
+            if ($request->hasFile('img_url')) {
+                $file = $request->file('img_url');
+                $name = time() . '_' . $file->getClientOriginalName();
+                $filePath = $file->storeAs('uploads', $name, 'public');
+                $requestData['image_url'] = $filePath;
+            }
+
+            $podcast = Podcast::create(Arr::except($requestData, ['image_url']) + [
                 'user_id' => auth()->id(),
-                'slug' => Str::slug($request->validated()['name']),
+                'slug' => Str::slug($requestData['name']),
             ]);
 
             if (! $podcast) {
@@ -80,6 +99,13 @@ class PodcastController extends Controller
 
             if ($requestData['name']) {
                 $requestData['slug'] = Str::slug($requestData['name']);
+            }
+
+            if ($request->hasFile('img_url')) {
+                $file = $request->file('img_url');
+                $name = time() . '_' . $file->getClientOriginalName();
+                $filePath = $file->storeAs('uploads', $name, 'public');
+                $requestData['image_url'] = $filePath;
             }
 
             $podcast->update($requestData);

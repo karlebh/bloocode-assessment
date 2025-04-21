@@ -23,6 +23,11 @@ class Podcast extends Model
         'episode_count',
     ];
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);

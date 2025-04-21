@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\EpisodeController;
 use App\Http\Controllers\PodcastController;
 use App\Http\Middleware\APIGuest;
 use App\Models\Category;
@@ -17,17 +18,24 @@ Route::post('/register',  [AuthController::class, 'register']);
 Route::post('/logout',  [AuthController::class, 'logout'])->middleware(APIGuest::class);
 
 Route::get('/categories', [CategoryController::class, 'index']);
-Route::get('/categories/{id}', [CategoryController::class, 'show']);
+Route::get('/categories/{slug}', [CategoryController::class, 'show']);
 
 Route::get('/podcasts', [PodcastController::class, 'index']);
-Route::get('/podcasts/{id}', [PodcastController::class, 'show']);
+Route::get('/podcasts/{slug}', [PodcastController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/categories', [CategoryController::class, 'store']);
-    Route::patch('/categories/{id}', [CategoryController::class, 'update']);
-    Route::delete('/categories/{id}', [CategoryController::class, 'delete']);
+    Route::patch('/categories/{slug}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{slug}', [CategoryController::class, 'delete']);
 
     Route::post('/podcasts', [PodcastController::class, 'store']);
-    Route::patch('/podcasts/{id}', [PodcastController::class, 'update']);
-    Route::delete('/podcasts/{id}', [PodcastController::class, 'delete']);
+    Route::patch('/podcasts/{slug}', [PodcastController::class, 'update']);
+    Route::delete('/podcasts/{slug}', [PodcastController::class, 'delete']);
+
+    Route::get('/expisodes/newly-added', [EpisodeController::class, 'newlyAdded']);
+    Route::get('/expisodes/editors-pick', [EpisodeController::class, 'editorsPick']);
+    Route::get('/expisodes/trending-this-week', [EpisodeController::class, 'trendingThisWeek']);
+    Route::get('/expisodes/{slug}', [EpisodeController::class, 'show']);
+    Route::post('/episodes', [EpisodeController::class, 'store']);
+    Route::patch('/episodes/{slug}', [EpisodeController::class, 'update']);
 });

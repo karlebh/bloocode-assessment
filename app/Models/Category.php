@@ -13,6 +13,11 @@ class Category extends Model
 
     protected $fillable = ['name', 'slug', 'description'];
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     public function podcasts(): HasMany
     {
         return $this->hasMany(Podcast::class);

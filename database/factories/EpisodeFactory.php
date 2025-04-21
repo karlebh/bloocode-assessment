@@ -24,6 +24,7 @@ class EpisodeFactory extends Factory
             'episode_number' => $this->faker->numberBetween(1, 50),
             'summary' => $this->faker->paragraph,
             'release_date' => $this->faker->date(),
+            'listen_count' => rand(1, 1000),
         ];
     }
 }
